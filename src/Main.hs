@@ -11,11 +11,15 @@ main :: IO()
 main = do
   gen <- fmap mkStdGen randomIO
   deck <- mkDeck
-  kings <- mkKings
+  players <- mkPlayers
   print $ deck
 
-  let plr = Player [] [] (kings !! 0)
-  let plrs = (plr,plr,plr,plr)
-  let initialState=DMLState deck def [] [] plrs
+  let initialState = DMLState { deck     = deck
+                              , market   = def
+                              , bMarkets = []
+                              , loot     = []
+                              , players  = players
+                              , event    = Nothing
+                              }
   let roll=evalDML mkRoll initialState gen
   putStrLn $ show roll

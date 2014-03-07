@@ -12,11 +12,10 @@ module DML.Types(Resource(..),
                  Event,
                  mkEvent,
                  mkDeck,
-                 mkKings,
-                 Player(..),
+                 mkPlayers,
+                 Player,
                  DMLState(..)) where
 
-import System.Random (StdGen)
 import Data.Default
 import Data.Maybe (fromJust)
 import Data.Random.RVar
@@ -32,12 +31,12 @@ data Character = MotherOfDragons | Archudess | DragonEmpress | BitchQueen
                | TroublesomeBlabbermouth | GoodsSwindler | GrandInquisitor | BoonLiquidator deriving (Show, Eq)
 
 -- | Type representing a card in a DML game
-data Card = Card { resource :: Resource, value :: Int }
-          | Guild { resource :: Resource }
-          | Character { character :: Character }
-          | DragonEgg { resource :: Resource }
+data Card = Card      { resource  :: Resource, value :: Int }
+          | Guild     { resource  :: Resource               }
+          | Character { character :: Character              }
+          | DragonEgg { resource  :: Resource               }
           | Thief
-          | King { resource :: Resource } deriving (Show,Eq)
+          | King      { resource  :: Resource               } deriving (Show,Eq)
 
 -- | Type representing a global event type in a DML game
 data EventType = Decadence | TaxRelief | Looters | SupplyShortage | ForeignMerchant deriving (Show,Eq)
@@ -51,6 +50,7 @@ data Market = Market { slaves :: [Card]
                      , iron   :: [Card]
                      , wood   :: [Card]
                      } deriving (Show,Eq)
+
 instance Default Market where
   def = Market [] [] [] []
 
@@ -60,12 +60,17 @@ type EventDeck = [Card]
 type Treasury = [Card]
 type House = [Card]
 
-data Player = Player { treasury :: Treasury, house :: House, king :: Card } deriving (Show,Eq)
-data DMLState = DMLState { deck :: EventDeck
-                         , market :: Market
-                         , bMarket :: BlackMarket
-                         , loot :: DragonsLoot
-                         , players :: (Player, Player, Player, Player)
+data Player = Player { treasury :: Treasury
+                     , house :: House
+                     , king :: Card
+                     } deriving (Show,Eq)
+
+data DMLState = DMLState { deck     :: EventDeck
+                         , market   :: Market
+                         , bMarkets :: [BlackMarket]
+                         , loot     :: DragonsLoot
+                         , players  :: (Player, Player, Player, Player)
+                         , event    :: Maybe Event
                          }
 
 -- | Constructs jack Character from a Resource
@@ -112,11 +117,15 @@ mkCard r v
 -- | Creates a deck of cards and shuffles it
 mkDeck :: RandomSource m DevRandom => m [Card]
 mkDeck = do
-  let deck = Thief : Thief : [fromJust $ mkCard r v | r <- [Slave,Spice,Iron,Wood], v <- [1..12]]
-  runRVar (shuffle deck) DevURandom
+  let orderedDeck = Thief : Thief : [fromJust $ mkCard r v | r <- [Slave,Spice,Iron,Wood], v <- [1..12]]
+  runRVar (shuffle orderedDeck) DevURandom
 
--- | Creates a deck of kings and shuffles it
-mkKings :: RandomSource m DevRandom => m [Card]
-mkKings = do
-  let deck = [fromJust $ mkCard r 13 | r <- [Slave, Spice, Iron, Wood]]
-  runRVar (shuffle deck) DevURandom
+mkPlayer :: Card -> Player
+mkPlayer (King r) = Player [] [] (King r)
+
+-- | Creates a tuple of players
+mkPlayers :: RandomSource m DevRandom => m (Player, Player, Player, Player)
+mkPlayers = do
+  let kingDeck = [fromJust $ mkCard r 13 | r <- [Slave, Spice, Iron, Wood]]
+  kings <- runRVar (shuffle kingDeck) DevURandom
+  return (mkPlayer $ kings !! 0, mkPlayer $ kings !! 1, mkPlayer $ kings !! 2, mkPlayer $ kings !! 3) -- ugly :(

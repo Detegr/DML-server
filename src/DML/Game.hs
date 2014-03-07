@@ -16,6 +16,12 @@ evalDML f s g = fst $ runDML f s g
 execDML :: (RandomGen g) => DML g a -> DMLState -> g -> DMLState
 execDML f s g = snd $ runDML f s g
 
+supply :: DMLState -> DMLState
+supply s
+  | deck s == [] = s
+  | otherwise = undefined
+  where c = head (deck s)
+
 -- | Rolls two dice and returns the values in a tuple
 mkRoll :: (RandomGen g) => DML g (Int, Int)
 mkRoll = (,) <$> rollOne <*> rollOne
