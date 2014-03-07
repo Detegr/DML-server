@@ -1,8 +1,8 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell, FlexibleContexts #-}
 
 module DML.Types(Resource(..),
-                 Card,
-                 Market(..),
+                 Card(..),
+                 Market, slaves, spices, iron, wood,
                  BlackMarket,
                  DragonsLoot,
                  EventDeck,
@@ -14,12 +14,14 @@ module DML.Types(Resource(..),
                  mkDeck,
                  mkPlayers,
                  Player,
-                 DMLState(..)) where
+                 DMLState(DMLState), deck, market, bMarkets, loot, players, event
+                 ) where
 
 import Data.Default
+import Control.Lens.TH
 import Data.Maybe (fromJust)
-import Data.Random.RVar
 import Data.Random.Extras (shuffle)
+import Data.Random.RVar
 import Data.Random.Source
 import Data.Random.Source.DevRandom
 
@@ -45,11 +47,12 @@ data EventType = Decadence | TaxRelief | Looters | SupplyShortage | ForeignMerch
 data Event = Event { etype :: EventType , power :: Int} deriving (Show,Eq)
 
 -- | Type representing the market in a DML game.
-data Market = Market { slaves :: [Card]
-                     , spices :: [Card]
-                     , iron   :: [Card]
-                     , wood   :: [Card]
+data Market = Market { _slaves :: [Card]
+                     , _spices :: [Card]
+                     , _iron   :: [Card]
+                     , _wood   :: [Card]
                      } deriving (Show,Eq)
+makeLenses ''Market
 
 instance Default Market where
   def = Market [] [] [] []
@@ -65,15 +68,16 @@ data Player = Player { treasury :: Treasury
                      , king :: Card
                      } deriving (Show,Eq)
 
-data DMLState = DMLState { deck     :: EventDeck
-                         , market   :: Market
-                         , bMarkets :: [BlackMarket]
-                         , loot     :: DragonsLoot
-                         , players  :: (Player, Player, Player, Player)
-                         , event    :: Maybe Event
-                         }
+data DMLState = DMLState { _deck     :: EventDeck
+                         , _market   :: Market
+                         , _bMarkets :: [BlackMarket]
+                         , _loot     :: DragonsLoot
+                         , _players  :: (Player, Player, Player, Player)
+                         , _event    :: Maybe Event
+                         } deriving (Show)
+makeLenses ''DMLState
 
--- | Constructs jack Character from a Resource
+-- | Constructs jack 'Character' from a 'Resource'
 getJack :: Resource -> Character
 getJack Slave = TroublesomeBlabbermouth
 getJack Spice = GoodsSwindler
@@ -81,7 +85,7 @@ getJack Iron = GrandInquisitor
 getJack Wood = BoonLiquidator
 getJack Joker = undefined
 
--- | Constructs queen Character from a Resource
+-- |Constructs queen 'Character' from a 'Resource'
 getQueen :: Resource -> Character
 getQueen Slave = MotherOfDragons
 getQueen Spice = Archudess
@@ -89,7 +93,7 @@ getQueen Iron = DragonEmpress
 getQueen Wood = BitchQueen
 getQueen Joker = undefined
 
--- | Constructs EventType from a Resource
+-- |Constructs 'EventType' from a 'Resource'
 getEvent :: Resource -> EventType
 getEvent Slave = Decadence
 getEvent Spice = TaxRelief
@@ -97,12 +101,12 @@ getEvent Iron = Looters
 getEvent Wood = SupplyShortage
 getEvent Joker = ForeignMerchant
 
--- | Constructs an Event out of Card
-mkEvent :: Card -> Maybe Event
-mkEvent (Card r v) = Just $ Event (getEvent r) v
-mkEvent _          = Nothing
+-- |Constructs an 'Event' out of a 'Maybe Card'
+mkEvent :: Maybe Card -> Maybe Event
+mkEvent (Just (Card r v)) = Just $ Event (getEvent r) v
+mkEvent _                 = Nothing
 
--- | Constructs a Card out of Resource and a value
+-- | Constructs a 'Card' out of 'Resource' and a value
 mkCard :: Resource -> Int -> Maybe Card
 mkCard r v
   | v > 1 && v < 10 = Just $ Card r v

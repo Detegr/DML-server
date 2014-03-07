@@ -1,25 +1,27 @@
 module Main where
 
+import Control.Lens
+import Control.Monad
 import Control.Monad.Random
+import Control.Monad.Trans (lift)
 import Control.Monad.Trans.State
-import System.Random
-import Data.Default
-import DML.Types
 import DML.Game
+import DML.Types
+import Data.Default
 
 main :: IO()
 main = do
   gen <- fmap mkStdGen randomIO
-  deck <- mkDeck
-  players <- mkPlayers
-  print $ deck
+  initialDeck <- mkDeck
+  playerTuple <- mkPlayers
 
-  let initialState = DMLState { deck     = deck
-                              , market   = def
-                              , bMarkets = []
-                              , loot     = []
-                              , players  = players
-                              , event    = Nothing
-                              }
-  let roll=evalDML mkRoll initialState gen
-  putStrLn $ show roll
+  let initialState = DMLState initialDeck def [] [] playerTuple Nothing
+
+  let (_,st)=runDML initialState gen $ do
+               restockM
+               supplyM
+               supplyM
+               supplyM
+               supplyM
+               supplyM
+  putStrLn . show $ (st ^. market)
