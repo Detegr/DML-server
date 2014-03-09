@@ -66,7 +66,7 @@ supply s =
         Guild     _ -> addToLoot c st
         Card    _ _ -> addToMarket c st
         Thief       -> addToLoot c st
-        King      _ -> undefined
+        --King      _ -> undefined
   where addToLoot c = loot <>~ [c]
         addToMarket c =
           case (resource c) of
@@ -74,7 +74,7 @@ supply s =
             Spice -> over market $ spices <>~ [c]
             Iron  -> over market $ iron <>~ [c]
             Wood  -> over market $ wood <>~ [c]
-            Joker -> undefined
+            --Joker -> undefined
 
 -- |Executes 'supply' in a DML monad
 supplyM :: DML g ()

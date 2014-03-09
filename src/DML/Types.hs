@@ -2,7 +2,7 @@
 
 module DML.Types(Resource(..),
                  Card(..),
-                 Market, slaves, spices, iron, wood,
+                 Market(Market), slaves, spices, iron, wood,
                  BlackMarket,
                  DragonsLoot,
                  EventDeck,
@@ -13,8 +13,9 @@ module DML.Types(Resource(..),
                  mkEvent,
                  mkDeck,
                  mkPlayers,
-                 Player,
-                 DMLState(DMLState), deck, market, bMarkets, loot, players, event
+                 Player(Player),
+                 DMLState(DMLState), deck, market, bMarkets, loot, players, event,
+                 mkCard,
                  ) where
 
 import Data.Default
@@ -83,7 +84,6 @@ getJack Slave = TroublesomeBlabbermouth
 getJack Spice = GoodsSwindler
 getJack Iron = GrandInquisitor
 getJack Wood = BoonLiquidator
-getJack Joker = undefined
 
 -- |Constructs queen 'Character' from a 'Resource'
 getQueen :: Resource -> Character
@@ -91,7 +91,6 @@ getQueen Slave = MotherOfDragons
 getQueen Spice = Archudess
 getQueen Iron = DragonEmpress
 getQueen Wood = BitchQueen
-getQueen Joker = undefined
 
 -- |Constructs 'EventType' from a 'Resource'
 getEvent :: Resource -> EventType
@@ -109,13 +108,13 @@ mkEvent _                 = Nothing
 -- | Constructs a 'Card' out of 'Resource' and a value
 mkCard :: Resource -> Int -> Maybe Card
 mkCard r v
+  | r == Joker      = Just Thief
   | v > 1 && v < 10 = Just $ Card r v
   | v == 1          = Just $ DragonEgg r
   | v == 10         = Just $ Guild r
   | v == 11         = Just $ Character (getJack r)
   | v == 12         = Just $ Character (getQueen r)
   | v == 13         = Just $ King r
-  | r == Joker      = Just Thief
   | otherwise       = Nothing
 
 -- | Creates a deck of cards and shuffles it
